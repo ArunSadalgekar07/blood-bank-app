@@ -1,0 +1,716 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Blood Banking API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: inventory
+    description: Blood inventory management
+  - name: donors
+    description: Donor management
+  - name: requests
+    description: Blood requests/recipients
+  - name: hospitals
+    description: Hospital management
+  - name: analytics
+    description: Donation analytics
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /inventory:
+    get:
+      operationId: getInventory
+      tags: [inventory]
+      summary: Get all blood inventory
+      responses:
+        "200":
+          description: Blood inventory list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BloodInventory"
+
+  /inventory/{bloodType}:
+    get:
+      operationId: getInventoryByBloodType
+      tags: [inventory]
+      summary: Get inventory for specific blood type
+      parameters:
+        - name: bloodType
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Blood inventory for type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BloodInventory"
+    patch:
+      operationId: updateInventory
+      tags: [inventory]
+      summary: Update blood inventory units
+      parameters:
+        - name: bloodType
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInventoryRequest"
+      responses:
+        "200":
+          description: Updated inventory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BloodInventory"
+
+  /donors/nearby:
+    get:
+      operationId: getNearbyDonors
+      tags: [donors]
+      summary: Get nearby donors sorted by distance
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: lon
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: radius
+          in: query
+          required: false
+          schema:
+            type: number
+        - name: bloodType
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Nearby donors sorted by distance
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Donor"
+
+  /donors:
+    get:
+      operationId: getDonors
+      tags: [donors]
+      summary: Get all donors
+      responses:
+        "200":
+          description: Donors list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Donor"
+    post:
+      operationId: createDonor
+      tags: [donors]
+      summary: Register a new donor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDonorRequest"
+      responses:
+        "201":
+          description: Created donor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donor"
+
+  /donors/{id}:
+    get:
+      operationId: getDonorById
+      tags: [donors]
+      summary: Get a donor by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Donor details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donor"
+    delete:
+      operationId: deleteDonor
+      tags: [donors]
+      summary: Delete a donor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /donors/{id}/donate:
+    post:
+      operationId: recordDonation
+      tags: [donors]
+      summary: Record a blood donation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordDonationRequest"
+      responses:
+        "201":
+          description: Recorded donation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donation"
+
+  /donations:
+    get:
+      operationId: getDonations
+      tags: [donors]
+      summary: Get all donations
+      responses:
+        "200":
+          description: Donations list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Donation"
+
+  /requests:
+    get:
+      operationId: getBloodRequests
+      tags: [requests]
+      summary: Get all blood requests
+      responses:
+        "200":
+          description: Blood requests list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BloodRequest"
+    post:
+      operationId: createBloodRequest
+      tags: [requests]
+      summary: Create a blood request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBloodRequestRequest"
+      responses:
+        "201":
+          description: Created request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BloodRequest"
+
+  /requests/{id}:
+    patch:
+      operationId: updateBloodRequest
+      tags: [requests]
+      summary: Update blood request status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBloodRequestRequest"
+      responses:
+        "200":
+          description: Updated request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BloodRequest"
+
+  /hospitals:
+    get:
+      operationId: getHospitals
+      tags: [hospitals]
+      summary: Get all hospitals
+      responses:
+        "200":
+          description: Hospitals list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Hospital"
+    post:
+      operationId: createHospital
+      tags: [hospitals]
+      summary: Add a hospital
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateHospitalRequest"
+      responses:
+        "201":
+          description: Created hospital
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hospital"
+
+  /analytics/summary:
+    get:
+      operationId: getAnalyticsSummary
+      tags: [analytics]
+      summary: Get analytics summary
+      responses:
+        "200":
+          description: Analytics summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsSummary"
+
+  /analytics/trends:
+    get:
+      operationId: getDonationTrends
+      tags: [analytics]
+      summary: Get donation trends by month
+      responses:
+        "200":
+          description: Donation trends
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DonationTrend"
+
+  /alerts:
+    get:
+      operationId: getAlerts
+      tags: [inventory]
+      summary: Get low inventory alerts
+      responses:
+        "200":
+          description: Alerts list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alert"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    BloodInventory:
+      type: object
+      properties:
+        id:
+          type: integer
+        bloodType:
+          type: string
+        units:
+          type: integer
+        minThreshold:
+          type: integer
+        expiryDate:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+      required:
+        - id
+        - bloodType
+        - units
+        - minThreshold
+        - updatedAt
+
+    UpdateInventoryRequest:
+      type: object
+      properties:
+        units:
+          type: integer
+        minThreshold:
+          type: integer
+      required:
+        - units
+
+    Donor:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        bloodType:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          nullable: true
+        age:
+          type: integer
+          nullable: true
+        lastDonationDate:
+          type: string
+          nullable: true
+        totalDonations:
+          type: integer
+        isEligible:
+          type: boolean
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        distanceKm:
+          type: number
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - bloodType
+        - phone
+        - totalDonations
+        - isEligible
+        - createdAt
+
+    CreateDonorRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        bloodType:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          nullable: true
+        age:
+          type: integer
+          nullable: true
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
+        address:
+          type: string
+          nullable: true
+      required:
+        - name
+        - bloodType
+        - phone
+
+    Donation:
+      type: object
+      properties:
+        id:
+          type: integer
+        donorId:
+          type: integer
+        donorName:
+          type: string
+        bloodType:
+          type: string
+        units:
+          type: integer
+        donatedAt:
+          type: string
+        hospitalId:
+          type: integer
+          nullable: true
+        hospitalName:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required:
+        - id
+        - donorId
+        - donorName
+        - bloodType
+        - units
+        - donatedAt
+
+    RecordDonationRequest:
+      type: object
+      properties:
+        units:
+          type: integer
+        hospitalId:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required:
+        - units
+
+    BloodRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        patientName:
+          type: string
+        bloodType:
+          type: string
+        units:
+          type: integer
+        urgency:
+          type: string
+        status:
+          type: string
+        hospitalId:
+          type: integer
+          nullable: true
+        hospitalName:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        requestedAt:
+          type: string
+        fulfilledAt:
+          type: string
+          nullable: true
+      required:
+        - id
+        - patientName
+        - bloodType
+        - units
+        - urgency
+        - status
+        - requestedAt
+
+    CreateBloodRequestRequest:
+      type: object
+      properties:
+        patientName:
+          type: string
+        bloodType:
+          type: string
+        units:
+          type: integer
+        urgency:
+          type: string
+        hospitalId:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required:
+        - patientName
+        - bloodType
+        - units
+        - urgency
+
+    UpdateBloodRequestRequest:
+      type: object
+      properties:
+        status:
+          type: string
+        notes:
+          type: string
+          nullable: true
+
+    Hospital:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - address
+        - city
+        - phone
+        - isActive
+        - createdAt
+
+    CreateHospitalRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          nullable: true
+      required:
+        - name
+        - address
+        - city
+        - phone
+
+    AnalyticsSummary:
+      type: object
+      properties:
+        totalDonors:
+          type: integer
+        totalDonations:
+          type: integer
+        totalUnitsAvailable:
+          type: integer
+        totalRequests:
+          type: integer
+        pendingRequests:
+          type: integer
+        criticalAlerts:
+          type: integer
+        monthlyDonations:
+          type: integer
+      required:
+        - totalDonors
+        - totalDonations
+        - totalUnitsAvailable
+        - totalRequests
+        - pendingRequests
+        - criticalAlerts
+        - monthlyDonations
+
+    DonationTrend:
+      type: object
+      properties:
+        month:
+          type: string
+        donations:
+          type: integer
+        units:
+          type: integer
+      required:
+        - month
+        - donations
+        - units
+
+    Alert:
+      type: object
+      properties:
+        bloodType:
+          type: string
+        currentUnits:
+          type: integer
+        minThreshold:
+          type: integer
+        severity:
+          type: string
+      required:
+        - bloodType
+        - currentUnits
+        - minThreshold
+        - severity
